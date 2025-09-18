@@ -51,11 +51,13 @@ void Draw()
     DrawText(timer.c_str(), 25, 110, 30, LIGHTGRAY);
     DrawText(TextFormat("Frequency: %0.2f", frequency), 25, 140, 30, LIGHTGRAY);
     DrawText(TextFormat("Amplitude: %0.2f", amplitude), 25, 170, 30, LIGHTGRAY);
-    
+        
     DrawCircle(x, y, 60, RED);
     DrawCircle(GetScreenWidth() / 2 + cos(time * frequency) * amplitude, GetScreenHeight() / 2, 60, GREEN);
     DrawCircle(GetScreenWidth() / 2, GetScreenHeight() / 2 + sin(time * frequency) * amplitude, 60, DARKPURPLE);
     DrawCircle(GetScreenWidth() / 2 + cos(time * frequency) * amplitude, GetScreenHeight() / 2 + sin(time * frequency) * amplitude, 60, ORANGE);
+
+    //DrawLine(GetScreenWidth() / 2 + cos(time * frequency) * amplitude, GetScreenHeight() / 2, GetScreenWidth() / 2, GetScreenHeight() / 2 + sin(time * frequency) * amplitude, RED);
 
     EndDrawing();
 }
