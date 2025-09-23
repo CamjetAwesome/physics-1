@@ -9,10 +9,9 @@ using namespace std;
 const unsigned int TARGET_FPS = 50;
 float time = 0;
 float deltatime = 0;
-float x = 900;
-float y = 300;
-float frequency = 1.0f;
-float amplitude = 70;
+
+float speed = 100;
+float angle = 0;
 
 int minuteCounter = 0;
 float secondCounter = 0;
@@ -23,10 +22,7 @@ void Update()
     deltatime = 1.0f / TARGET_FPS;
     time += deltatime;
 
-    x = x + (sin(time * frequency)) * frequency * amplitude * deltatime;
-    y = y + (cos(time * frequency)) * frequency * amplitude * deltatime;
-
-    minuteCounter = time / 60;
+    minuteCounter = (int)time / 60;
     secondCounter = time - (minuteCounter * 60);
     timer = "Time: ";
     if (minuteCounter < 10) {
@@ -43,27 +39,25 @@ void Draw()
 {
     BeginDrawing();
     ClearBackground(BLUE);
-    //DrawText("Hello world!", 10, 10, 20, LIGHTGRAY);
-
+    
     GuiSliderBar(Rectangle{ 75, 5, 500, 25 }, "Time", TextFormat("%.2f", time), &time, 0, 600);
-    GuiSliderBar(Rectangle{ 75, 35, 100, 25 }, "Frequency", TextFormat("%.2f", frequency), &frequency, 0, 2);
-    GuiSliderBar(Rectangle{ 75, 65, 100, 25 }, "Amplitude", TextFormat("%.2f", amplitude), &amplitude, 0, 140);
     DrawText(timer.c_str(), 25, 110, 30, LIGHTGRAY);
-    DrawText(TextFormat("Frequency: %0.2f", frequency), 25, 140, 30, LIGHTGRAY);
-    DrawText(TextFormat("Amplitude: %0.2f", amplitude), 25, 170, 30, LIGHTGRAY);
-        
-    DrawCircle(x, y, 60, RED);
-    DrawCircle(GetScreenWidth() / 2 + cos(time * frequency) * amplitude, GetScreenHeight() / 2, 60, GREEN);
-    DrawCircle(GetScreenWidth() / 2, GetScreenHeight() / 2 + sin(time * frequency) * amplitude, 60, DARKPURPLE);
-    DrawCircle(GetScreenWidth() / 2 + cos(time * frequency) * amplitude, GetScreenHeight() / 2 + sin(time * frequency) * amplitude, 60, ORANGE);
 
-    //DrawLine(GetScreenWidth() / 2 + cos(time * frequency) * amplitude, GetScreenHeight() / 2, GetScreenWidth() / 2, GetScreenHeight() / 2 + sin(time * frequency) * amplitude, RED);
+    GuiSliderBar(Rectangle{ 75, 25, 500, 25 }, "Angle", TextFormat("Angle: %.0f Degrees", angle), &angle, -180, 180);
+    GuiSliderBar(Rectangle{ 75, 45, 500, 25 }, "Speed", TextFormat("Speed: ", speed), &speed, 10, 200);
+
+    Vector2 startPos = { 300, 500 };
+    Vector2 velocity = { speed * cos(angle * DEG2RAD), speed * sin(angle * DEG2RAD)};
+
+    DrawLineEx({ startPos.x - speed, startPos.y }, { startPos.x + speed, startPos.y}, 7, BLACK);
+    DrawLineEx(startPos, startPos + velocity, 5, RED);
 
     EndDrawing();
 }
 
 int main()
 {
+
     InitWindow(InitialWidth, InitialHeight, "Cameron's Very Own Physics Engine");
     SetTargetFPS(TARGET_FPS);
 
