@@ -20,7 +20,7 @@ enum PhysicsShape {
     HALFSPACE
 };
 
-void CheckCollision();
+void CheckCollisions();
 
 class PhysicsObject
 {
@@ -128,7 +128,7 @@ public:
             object->Draw();
         }
 
-        CheckCollision();
+        CheckCollisions();
     }
 
     void add(PhysicsObject* newObject)
@@ -156,18 +156,25 @@ bool CheckCircleCircleOverlap(PhysicsCircle* A, PhysicsCircle* B)
 
 bool CheckCircleHalfspaceOverlap(PhysicsCircle* Circle, PhysicsHalfSpace* Halfspace)
 {
-    // Not finished!
-    Vector2 displacement = Halfspace->position - Circle->position;
+    // Get Displacement
+    Vector2 displacement = Circle->position - Halfspace->position;
+
+    // Take the dot product
+    float dot = Vector2DotProduct(displacement, Halfspace->GetNormal());
+    Vector2 vectorProjection = Halfspace->GetNormal() * dot;
+
     float distance = Vector2Length(displacement);
 
-    DrawLineEx(Circle->position, Halfspace->position, 1, GRAY);
-    Vector2 midpoint = Halfspace->position + displacement * 0.5f;
-    //DrawText("D: ", midpoint)
+    DrawLineEx(Circle->position, Circle->position - vectorProjection, 3, GRAY);
 
-    return false;
+    //Vector2 midpoint = vectorProjection * displacement * 0.5f;
+    Vector2 midpoint = Circle->position - vectorProjection * 0.5f;
+    DrawText(TextFormat("D: %6", dot), midpoint.x, midpoint.y, 20, GRAY);
+
+    return dot < Circle->radius && dot > -Circle->radius;
 }
 
-void CheckCollision()
+void CheckCollisions()
 {
     for (int i = 0; i < world.objects.size(); i++)
     {
@@ -286,9 +293,7 @@ void Draw()
     DrawLineEx({ startPos.x - speed, startPos.y }, { startPos.x + speed, startPos.y}, 7, BLACK);
     DrawLineEx(startPos, startPos + velocity, 5, RED);
 
-    halfspace.Draw();
-
-    
+    halfspace.Draw();    
 
     // halfspace controls
     GuiSliderBar(Rectangle{ 100, 135, 500, 25 }, "Halfspace X", TextFormat("%.0f", halfspace.position.x), &halfspace.position.x, 0, GetScreenWidth());
