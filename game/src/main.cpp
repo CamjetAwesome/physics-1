@@ -113,6 +113,17 @@ public:
     std::vector<PhysicsObject*> objects;
     Vector2 accelerationGravity = { 0, 9 };
 
+    void Draw()
+    {
+        for (int i = 0; i < objects.size(); i++)
+        {
+            PhysicsObject* object = objects[i];
+
+            DrawLineEx(object->position, object->position + object->velocity, 5, object->color);
+            object->Draw();
+        }
+    }
+
     void Update()
     {
         for (int i = 0; i < objects.size(); i++)
@@ -123,9 +134,7 @@ public:
             if (object->isStatic) continue;
 
             object->position += object->velocity * deltatime;
-            object->velocity += accelerationGravity * deltatime;
-            DrawLineEx(object->position, object->position + object->velocity, 5, object->color);
-            object->Draw();
+            object->velocity += accelerationGravity * deltatime;            
         }
 
         CheckCollisions();
@@ -140,6 +149,7 @@ public:
 
 PhysicsWorld world;
 PhysicsHalfSpace halfspace;
+PhysicsHalfSpace halfspace2;
 float halfspaceRotation = halfspace.GetRotation();
 
 int minuteCounter = 0;
@@ -152,6 +162,25 @@ bool CheckCircleCircleOverlap(PhysicsCircle* A, PhysicsCircle* B)
     float distance = Vector2Length(displacement); // Use pythagorean theorem to get magnitude
     float sumOfRadii = A->radius + B->radius;
     return sumOfRadii > distance;
+}
+
+bool CircleCircleCollisionResponse(PhysicsCircle* A, PhysicsCircle* B)
+{
+    Vector2 displacement = B->position - A->position;
+    float distance = Vector2Length(displacement); // Use pythagorean theorem to get magnitude
+    float sumOfRadii = A->radius + B->radius;
+
+    float overlap = sumOfRadii - distance;
+    Vector2 normal = displacement / distance;
+    Vector2 mtv = normal * overlap; // minimum translation vector (to move to have objects not overlap
+
+    if (overlap > 0)
+    {
+        A->position -= mtv * 0.5f;
+        B->position += mtv * 0.5f;
+    }
+
+    return overlap > 0;
 }
 
 bool CheckCircleHalfspaceOverlap(PhysicsCircle* Circle, PhysicsHalfSpace* Halfspace)
@@ -174,6 +203,34 @@ bool CheckCircleHalfspaceOverlap(PhysicsCircle* Circle, PhysicsHalfSpace* Halfsp
     return dot < Circle->radius && dot > -Circle->radius;
 }
 
+bool CircleHalfspaceCollisionResponse(PhysicsCircle* Circle, PhysicsHalfSpace* Halfspace)
+{
+    // Get Displacement
+    Vector2 displacement = Circle->position - Halfspace->position;
+
+    // Take the dot product
+    float dot = Vector2DotProduct(displacement, Halfspace->GetNormal());
+    Vector2 vectorProjection = Halfspace->GetNormal() * dot;
+
+    float distance = Vector2Length(displacement);
+
+    DrawLineEx(Circle->position, Circle->position - vectorProjection, 3, GRAY);
+
+    //Vector2 midpoint = vectorProjection * displacement * 0.5f;
+    Vector2 midpoint = Circle->position - vectorProjection * 0.5f;
+    DrawText(TextFormat("D: %6", dot), midpoint.x, midpoint.y, 20, GRAY);
+
+    float overlap = Circle->radius - dot;
+
+    if (overlap > 0)
+    {
+        Vector2 mtv = halfspace.GetNormal() * overlap;
+        Circle->position += mtv;
+    }
+
+    return dot < Circle->radius && dot > -Circle->radius;
+}
+
 void CheckCollisions()
 {
     for (int i = 0; i < world.objects.size(); i++)
@@ -191,25 +248,25 @@ void CheckCollisions()
             PhysicsShape ShapeA = ObjectA->GetShape();
             PhysicsShape ShapeB = ObjectB->GetShape();
 
-            bool overlap = false;
+            bool isOverlapping = false;
 
             //Check which collision function to use
             // Circle - Circle Collision
             if (ShapeA == CIRCLE && ShapeB == CIRCLE)
             {
-                overlap = CheckCircleCircleOverlap((PhysicsCircle*)ObjectA, (PhysicsCircle*)ObjectB);
+                isOverlapping = CircleCircleCollisionResponse((PhysicsCircle*)ObjectA, (PhysicsCircle*)ObjectB);
             }
             // Circle - Halfspace Collision
             else if (ShapeA == CIRCLE && ShapeB == HALFSPACE)
             {
-                overlap = CheckCircleHalfspaceOverlap((PhysicsCircle*)ObjectA, (PhysicsHalfSpace*)ObjectB);
+                isOverlapping = CircleHalfspaceCollisionResponse((PhysicsCircle*)ObjectA, (PhysicsHalfSpace*)ObjectB);
             }
             else if (ShapeA == HALFSPACE && ShapeB == CIRCLE)
             {
-                overlap = CheckCircleHalfspaceOverlap((PhysicsCircle*)ObjectB, (PhysicsHalfSpace*)ObjectA);
+                isOverlapping = CircleHalfspaceCollisionResponse((PhysicsCircle*)ObjectB, (PhysicsHalfSpace*)ObjectA);
             }
 
-            if (overlap)
+            if (isOverlapping)
             {
                 ObjectA->color = RED;
                 ObjectB->color = RED;
@@ -293,7 +350,7 @@ void Draw()
     DrawLineEx({ startPos.x - speed, startPos.y }, { startPos.x + speed, startPos.y}, 7, BLACK);
     DrawLineEx(startPos, startPos + velocity, 5, RED);
 
-    halfspace.Draw();    
+    world.Draw();
 
     // halfspace controls
     GuiSliderBar(Rectangle{ 100, 135, 500, 25 }, "Halfspace X", TextFormat("%.0f", halfspace.position.x), &halfspace.position.x, 0, GetScreenWidth());
@@ -301,8 +358,9 @@ void Draw()
     GuiSliderBar(Rectangle{ 100, 195, 500, 25 }, "Halfspace Rotation", TextFormat("%.0f", halfspaceRotation), &halfspaceRotation, -360, 360);
     halfspace.SetRotationInDegrees(halfspaceRotation);
     halfspace.isStatic = true;
-
-    Cleanup();
+    halfspace2.isStatic = true;
+    
+    //Cleanup();
     EndDrawing();
 }
 
@@ -316,8 +374,13 @@ int main()
     GuiSetStyle(DEFAULT, TEXT_SIZE, 32);
     GuiSetStyle(DEFAULT, TEXT_COLOR_NORMAL, 0xFFFFFFFF);
 
-    halfspace.position = { 500,700 };
+    halfspace.position = { 500, 700 };
+    halfspace.SetRotationInDegrees(15);    
     world.add(&halfspace);
+
+    halfspace2.position = { 400, 700 };
+    halfspace2.SetRotationInDegrees(-15);    
+    world.add(&halfspace2);
 
     while (!WindowShouldClose())
     {   
