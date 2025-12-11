@@ -99,6 +99,7 @@
     <IntDir>$(ProjectDir)obj\x64\Debug\</IntDir>
     <TargetName>physics-1</TargetName>
     <TargetExt>.exe</TargetExt>
+    <EnableMicrosoftCodeAnalysis>false</EnableMicrosoftCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
