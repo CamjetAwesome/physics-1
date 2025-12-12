@@ -144,10 +144,17 @@ class PhysicsBox : public PhysicsObject
 {
 public:
 	Vector2 size = { 0, 0 };
+    float mass = 10;
 
     void Draw() override
     {
+		float minX = position.x - size.x * 0.5f;
+		float minY = position.y - size.y * 0.5f;
+		float maxX = position.x + size.x * 0.5f;
+		float maxY = position.y + size.y * 0.5f;
 
+
+		DrawRectangle(minX, minY, size.x, size.y, color);
     }
 
     PhysicsShape GetShape() override
@@ -211,13 +218,13 @@ int minuteCounter = 0;
 float secondCounter = 0;
 string timer;
 
-bool CheckCircleCircleOverlap(PhysicsCircle* A, PhysicsCircle* B)
-{
-    Vector2 displacement = B->position - A->position;
-    float distance = Vector2Length(displacement); // Use pythagorean theorem to get magnitude
-    float sumOfRadii = A->radius + B->radius;
-    return sumOfRadii > distance;
-}
+//bool CheckCircleCircleOverlap(PhysicsCircle* A, PhysicsCircle* B)
+//{
+//    Vector2 displacement = B->position - A->position;
+//    float distance = Vector2Length(displacement); // Use pythagorean theorem to get magnitude
+//    float sumOfRadii = A->radius + B->radius;
+//    return sumOfRadii > distance;
+//}
 
 bool CircleCircleCollisionResponse(PhysicsCircle* A, PhysicsCircle* B)
 {
@@ -258,46 +265,100 @@ bool CircleCircleCollisionResponse(PhysicsCircle* A, PhysicsCircle* B)
 }
 
 bool BoxBoxOverlap(PhysicsBox* A, PhysicsBox* B)
-{
-    float aExtentsX = A->size.x * 0.5f;
-	float aExtentsY = A->size.y * 0.5f;
+{    
+	float aExtentsX = A->size.x * 0.5f; // half width
+	float aExtentsY = A->size.y * 0.5f; // half height
 	float bExtentsX = B->size.x * 0.5f;
 	float bExtentsY = B->size.y * 0.5f;
 
-	float aMinX = A->position.x - aExtentsX;
-	float aMaxX = A->position.x + aExtentsX;
-	float aMinY = A->position.y - aExtentsY;
-	float aMaxY = A->position.y + aExtentsY;
+    // A min and max points
+	float aMinX = A->position.x - aExtentsX; // min (furthest left)
+	float aMaxX = A->position.x + aExtentsX; // max (furthest right)
+	
+	float aMinY = A->position.y - aExtentsY; // min (furthest up)
+	float aMaxY = A->position.y + aExtentsY; // max (furthest down)
+
+    // B min and max points
 	float bMinX = B->position.x - bExtentsX;
 	float bMaxX = B->position.x + bExtentsX;
-	float bMinY = B->position.y - bExtentsY;
+	
+    float bMinY = B->position.y - bExtentsY;
 	float bMaxY = B->position.y + bExtentsY;
 
-    return  ((aMinX < bMinX && bMinX < aMaxX) || (aMinX < bMaxX && bMaxX < aMaxX)) &&
-            ((aMinY < bMinY && bMinY < aMaxY) || (aMaxY < bMaxY && bMaxY < aMaxY));
+    float distanceX = 0;
+	float distanceY = 0;
+
+	// to calculate overlap, we check if any of B's min or max points are within A's min and max points
+	bool aXOverlapsB = (aMinX <= bMinX && bMinX <= aMaxX) || (aMinX <= bMaxX && bMaxX <= aMaxX);
+    bool aYOverlapsB = (aMinY <= bMinY && bMinY <= aMaxY) || (aMinY <= bMaxY && bMaxY <= aMaxY);
+    
+    //if (((aMinX <= bMinX && bMinX <= aMaxX) || (aMinX <= bMaxX && bMaxX <= aMaxX)) && ((aMinY <= bMinY && bMinY <= aMaxY) || (aMaxY <= bMaxY && bMaxY <= aMaxY)))
+    
+	if (aXOverlapsB && aYOverlapsB)
+    {
+		distanceX = A->position.x - B->position.x;
+		distanceY = A->position.y - B->position.y;
+
+        if (distanceX > distanceY)
+        {
+			A->position.x += distanceX * 0.5f;
+			B->position.x -= distanceX * 0.5f;
+        }
+        else
+        {
+            if (A->isStatic)
+            {
+                float overlap = bMaxY - aMinY;
+                B->position.y -= overlap;
+            }
+            else if (B->isStatic)
+            {
+				float overlap = aMaxY - bMinY;
+                A->position.y -= overlap;
+            }
+            else
+            {
+                if (aMinY < bMinY)
+                {
+                    float overlap = aMaxY - bMinY;
+                    A->position.y -= overlap;
+
+                }
+                else
+                {
+                    float overlap = bMaxY - aMinY;
+                    B->position.y -= overlap;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    return false;
 }
 
-bool CheckCircleHalfspaceOverlap(PhysicsCircle* Circle, PhysicsHalfSpace* Halfspace)
-{
-    // Get Displacement
-    Vector2 displacement = Circle->position - Halfspace->position;
-
-    // Take the dot product
-    float dot = Vector2DotProduct(displacement, Halfspace->GetNormal());
-    Vector2 vectorProjection = Halfspace->GetNormal() * dot;
-
-    float distance = Vector2Length(displacement);
-
-    DrawLineEx(Circle->position, Circle->position - vectorProjection, 3, GRAY);
-
-    //Vector2 midpoint = vectorProjection * displacement * 0.5f;
-    Vector2 midpoint = Circle->position - vectorProjection * 0.5f;
-    DrawText(TextFormat("D: %6", dot), midpoint.x, midpoint.y, 20, GRAY);
-
-    float overlap = Circle->radius - dot;
-
-    return dot < Circle->radius && dot > -Circle->radius;
-}
+//bool CheckCircleHalfspaceOverlap(PhysicsCircle* Circle, PhysicsHalfSpace* Halfspace)
+//{
+//    // Get Displacement
+//    Vector2 displacement = Circle->position - Halfspace->position;
+//
+//    // Take the dot product
+//    float dot = Vector2DotProduct(displacement, Halfspace->GetNormal());
+//    Vector2 vectorProjection = Halfspace->GetNormal() * dot;
+//
+//    float distance = Vector2Length(displacement);
+//
+//    DrawLineEx(Circle->position, Circle->position - vectorProjection, 3, GRAY);
+//
+//    //Vector2 midpoint = vectorProjection * displacement * 0.5f;
+//    Vector2 midpoint = Circle->position - vectorProjection * 0.5f;
+//    DrawText(TextFormat("D: %6", dot), midpoint.x, midpoint.y, 20, GRAY);
+//
+//    float overlap = Circle->radius - dot;
+//
+//    return dot < Circle->radius && dot > -Circle->radius;
+//}
 
 bool CircleHalfspaceCollisionResponse(PhysicsCircle* Circle, PhysicsHalfSpace* Halfspace)
 {
@@ -330,7 +391,7 @@ bool CircleHalfspaceCollisionResponse(PhysicsCircle* Circle, PhysicsHalfSpace* H
 		// Apply Normal Force
         Vector2 FgPerpindicular = Halfspace->GetNormal() * Vector2DotProduct(Fgravity, Halfspace->GetNormal());
         Vector2 Fnormal = FgPerpindicular * -1;
-        DrawLine(Circle->position.x, Circle->position.y, Circle->position.x + Fnormal.x, Circle->position.y + Fnormal.y, GREEN);
+        //DrawLine(Circle->position.x, Circle->position.y, Circle->position.x + Fnormal.x, Circle->position.y + Fnormal.y, GREEN);
         
         // Friction
         float coefficientOfFriction = Clamp(Circle->grippiness * Halfspace->grippiness, 0.0f, 1.0f);
@@ -493,8 +554,8 @@ void Draw()
     // halfspace controls
     GuiSliderBar(Rectangle{ 200, 155, 300, 25 }, "Halfspace X", TextFormat("%.0f", halfspace.position.x), &halfspace.position.x, 0, GetScreenWidth());
     GuiSliderBar(Rectangle{ 200, 185, 300, 25 }, "Halfspace Y", TextFormat("%.0f", halfspace.position.y), &halfspace.position.y, 0, GetScreenHeight());
-    GuiSliderBar(Rectangle{ 300, 215, 200, 25 }, "Halfspace Rotation", TextFormat("%.0f", halfspaceRotation), &halfspaceRotation, -360, 360);
-    GuiSliderBar(Rectangle{ 300, 245, 200, 25 }, "Halfspace Grippiness", TextFormat("%.0f", halfspace.grippiness), &halfspace.grippiness, -180, 180);
+    GuiSliderBar(Rectangle{ 300, 215, 200, 25 }, "Halfspace Rotation", TextFormat("%.0f", halfspaceRotation), &halfspaceRotation, -180, 180);
+    GuiSliderBar(Rectangle{ 300, 245, 200, 25 }, "Halfspace Grippiness", TextFormat("%.0f", halfspace.grippiness), &halfspace.grippiness, 0, 10);
     
     halfspace.SetRotationInDegrees(halfspaceRotation);
     halfspace.isStatic = true;
@@ -521,6 +582,23 @@ int main()
     halfspace2.position = { 400, 700 };
     halfspace2.SetRotationInDegrees(-15);    
     //world.add(&halfspace2);
+
+    PhysicsBox* floorBox = new PhysicsBox;
+    floorBox->position = { 200, 750 };
+	floorBox->size = { 1200, 100};
+	floorBox->isStatic = true;
+	world.add(floorBox);
+
+    PhysicsBox* box1 = new PhysicsBox;
+	box1->position = { 600, 650 };
+	box1->size = { 50, 50 };
+	world.add(box1);
+
+	PhysicsBox* box2 = new PhysicsBox;
+	box2->position = { 600, 500 };
+	box2->size = { 50, 50 };
+	world.add(box2);
+
 
     while (!WindowShouldClose())
     {   
