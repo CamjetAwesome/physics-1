@@ -306,29 +306,17 @@ bool BoxBoxOverlap(PhysicsBox* A, PhysicsBox* B)
         }
         else
         {
-            if (A->isStatic)
+            float overlap;
+            if (aMinY < bMinY)
             {
-                float overlap = bMaxY - aMinY;
-                B->position.y -= overlap;
-            }
-            else if (B->isStatic)
-            {
-				float overlap = aMaxY - bMinY;
+                overlap = aMaxY - bMinY;
                 A->position.y -= overlap;
+
             }
             else
             {
-                if (aMinY < bMinY)
-                {
-                    float overlap = aMaxY - bMinY;
-                    A->position.y -= overlap;
-
-                }
-                else
-                {
-                    float overlap = bMaxY - aMinY;
-                    B->position.y -= overlap;
-                }
+                overlap = bMaxY - aMinY;
+                B->position.y -= overlap;
             }
         }
 
@@ -526,6 +514,17 @@ void Update()
         world.add(newObject);
     }
 
+    if (IsKeyPressed(KEY_LEFT_SHIFT))
+    {
+        PhysicsBox* newObject = new PhysicsBox();
+        newObject->position = position;
+		newObject->size = { 30, 30 };
+
+        newObject->velocity = { speed * (float)cos(angle * DEG2RAD), -speed * (float)sin(angle * DEG2RAD) };
+
+        world.add(newObject);
+    }
+
     world.Update();
 }
 
@@ -591,16 +590,22 @@ int main()
 	world.add(floorBox);
 
     PhysicsBox* box1 = new PhysicsBox;
-	box1->position = { 575, 650 };
-	box1->size = { 50, 50 };
+	box1->position = { 525, 650 };
+	box1->size = { 100, 100 };
     box1->color = RED;
 	world.add(box1);
 
 	PhysicsBox* box2 = new PhysicsBox;
-	box2->position = { 600, 500 };
-	box2->size = { 50, 50 };
+	box2->position = { 600, 550 };
+	box2->size = { 100, 100 };
 	box2->color = PURPLE;
 	world.add(box2);
+	
+    PhysicsBox* box3 = new PhysicsBox;
+	box3->position = { 550, 450 };
+	box3->size = { 100, 100 };
+	box3->color = DARKBLUE;
+	world.add(box3);
 
 
     while (!WindowShouldClose())
