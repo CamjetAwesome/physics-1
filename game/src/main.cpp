@@ -679,11 +679,10 @@ int main()
     world.add(box7);
 
 	PhysicsCircle* Pig = new PhysicsCircle();
-	Pig->position = { 800, 510 };
+	Pig->position = { 800, 700 };
 	Pig->radius = 20;
 	Pig->color = GREEN;
-
-
+	world.add(Pig);
 
     while (!WindowShouldClose())
     {
