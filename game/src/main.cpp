@@ -554,7 +554,7 @@ void Update()
             bird->position = mouse_position;
             bird->velocity = startPos - mouse_position; //Vector2Rotate(Vector2UnitX, -45.0f * DEG2RAD) * 100.0f;
             bird->radius = 10;
-			bird->color = YELLOW;
+			bird->color = RED;
             world.add(bird);
 
             slingshot_state = SLING_IDLE;
@@ -677,6 +677,11 @@ int main()
     box7->size = { 100, 60 };
     box7->color = DARKBLUE;
     world.add(box7);
+
+	PhysicsCircle* Pig = new PhysicsCircle();
+	Pig->position = { 800, 510 };
+	Pig->radius = 20;
+	Pig->color = GREEN;
 
 
 
