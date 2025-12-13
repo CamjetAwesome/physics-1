@@ -22,25 +22,31 @@ enum PhysicsShape {
     AABB
 };
 
+enum SlingshotState
+{
+    SLING_IDLE,
+    SLING_DRAG
+};
+
 void CheckCollisions();
 
 class PhysicsObject
 {
 public:
     bool isStatic = false;
-    Vector2 position = {0, 0};
-    Vector2 velocity = {0, 0};
+    Vector2 position = { 0, 0 };
+    Vector2 velocity = { 0, 0 };
     float mass = 5; // kg
     float radius = 15; // circular radius in pixels
     std::string name = "object";
     Color color = GREEN;
     Vector2 netForce = { 0, 0 };
     float grippiness = 0.1f;
-	float bounciness = 0.9f;
+    float bounciness = 0.9f;
 
     virtual void Draw()
     {
-        
+
     }
 
     virtual PhysicsShape GetShape() = 0;
@@ -70,7 +76,7 @@ public:
         for (int i = 0; i < objects.size(); i++)
         {
             PhysicsObject* object = objects[i];
-            
+
             object->netForce = { 0,0 };
         }
     }
@@ -87,7 +93,7 @@ public:
             object->netForce += Fgravity;
             Vector2 FgravityLine = { object->position.x + Fgravity.x, object->position.y + Fgravity.y };
             DrawLineEx(object->position, FgravityLine, 6, PURPLE);
-        }       
+        }
     }
 
     void ApplyKinematics()
@@ -131,7 +137,7 @@ public:
     void Draw() override
     {
         DrawCircle(position.x, position.y, radius, color);
-        DrawText(TextFormat("Size: %0.0f", radius), position.x, position.y, 20, WHITE);                
+        DrawText(TextFormat("Size: %0.0f", radius), position.x, position.y, 20, WHITE);
     }
 
     PhysicsShape GetShape() override
@@ -143,31 +149,31 @@ public:
 class PhysicsBox : public PhysicsObject
 {
 public:
-	Vector2 size = { 0, 0 };
+    Vector2 size = { 0, 0 };
     float mass = 10;
 
     void Draw() override
     {
-		float minX = position.x - size.x * 0.5f;
-		float minY = position.y - size.y * 0.5f;
-		float maxX = position.x + size.x * 0.5f;
-		float maxY = position.y + size.y * 0.5f;
+        float minX = position.x - size.x * 0.5f;
+        float minY = position.y - size.y * 0.5f;
+        float maxX = position.x + size.x * 0.5f;
+        float maxY = position.y + size.y * 0.5f;
 
 
-		DrawRectangle(minX, minY, size.x, size.y, color);
+        DrawRectangle(minX, minY, size.x, size.y, color);
     }
 
     PhysicsShape GetShape() override
     {
         return AABB;
-	}
+    }
 };
 
 class PhysicsHalfSpace : public PhysicsObject
 {
 private:
     float rotation = 0;
-    Vector2 normal = {0,-1};
+    Vector2 normal = { 0,-1 };
 
 public:
 #pragma region Get/Set Methods
@@ -202,12 +208,12 @@ public:
 
         // draw normal vector, perpendicular to the surface
         DrawLineEx(position, position + normal, 1, color);
-        
+
         // draw the line/surface
         Vector2 ParallelToSurface = Vector2Rotate(normal, PI * 0.5f);
         DrawLineEx(position - ParallelToSurface * 4000, position + ParallelToSurface * 4000, 1, color);
 
-    }    
+    }
 };
 
 PhysicsHalfSpace halfspace;
@@ -241,22 +247,22 @@ bool CircleCircleCollisionResponse(PhysicsCircle* A, PhysicsCircle* B)
         A->position -= mtv * 0.5f;
         B->position += mtv * 0.5f;
 
-		// From the perspective of A
-		Vector2 velocityBRelativeToA = B->velocity - A->velocity;
-		float closingVelocity1D = Vector2DotProduct(velocityBRelativeToA, normal);
+        // From the perspective of A
+        Vector2 velocityBRelativeToA = B->velocity - A->velocity;
+        float closingVelocity1D = Vector2DotProduct(velocityBRelativeToA, normal);
 
         if (closingVelocity1D >= 0) return true;
 
         float restitution = A->bounciness * B->bounciness;
 
-		float totalMass = A->mass + B->mass;
+        float totalMass = A->mass + B->mass;
         float impulseMagnitude = ((1.0f * restitution) * closingVelocity1D * A->mass * B->mass / totalMass);
 
-		Vector2 impulseA = normal * impulseMagnitude;
-		Vector2 impulseB = normal * -impulseMagnitude;
+        Vector2 impulseA = normal * impulseMagnitude;
+        Vector2 impulseB = normal * -impulseMagnitude;
 
-		A->velocity += impulseA / A->mass;
-		B->velocity += impulseB / B->mass;
+        A->velocity += impulseA / A->mass;
+        B->velocity += impulseB / B->mass;
 
         return true;
     }
@@ -265,44 +271,44 @@ bool CircleCircleCollisionResponse(PhysicsCircle* A, PhysicsCircle* B)
 }
 
 bool BoxBoxOverlap(PhysicsBox* A, PhysicsBox* B)
-{    
-	float aExtentsX = A->size.x * 0.5f; // half width
-	float aExtentsY = A->size.y * 0.5f; // half height
-	float bExtentsX = B->size.x * 0.5f;
-	float bExtentsY = B->size.y * 0.5f;
+{
+    float aExtentsX = A->size.x * 0.5f; // half width
+    float aExtentsY = A->size.y * 0.5f; // half height
+    float bExtentsX = B->size.x * 0.5f;
+    float bExtentsY = B->size.y * 0.5f;
 
     // A min and max points
-	float aMinX = A->position.x - aExtentsX; // min (furthest left)
-	float aMaxX = A->position.x + aExtentsX; // max (furthest right)
-	
-	float aMinY = A->position.y - aExtentsY; // min (furthest up)
-	float aMaxY = A->position.y + aExtentsY; // max (furthest down)
+    float aMinX = A->position.x - aExtentsX; // min (furthest left)
+    float aMaxX = A->position.x + aExtentsX; // max (furthest right)
+
+    float aMinY = A->position.y - aExtentsY; // min (furthest up)
+    float aMaxY = A->position.y + aExtentsY; // max (furthest down)
 
     // B min and max points
-	float bMinX = B->position.x - bExtentsX;
-	float bMaxX = B->position.x + bExtentsX;
-	
+    float bMinX = B->position.x - bExtentsX;
+    float bMaxX = B->position.x + bExtentsX;
+
     float bMinY = B->position.y - bExtentsY;
-	float bMaxY = B->position.y + bExtentsY;
+    float bMaxY = B->position.y + bExtentsY;
 
     float distanceX = 0;
-	float distanceY = 0;
+    float distanceY = 0;
 
-	// to calculate overlap, we check if any of B's min or max points are within A's min and max points
-	bool aXOverlapsB = (aMinX < bMinX && bMinX < aMaxX) || (aMinX < bMaxX && bMaxX < aMaxX);
+    // to calculate overlap, we check if any of B's min or max points are within A's min and max points
+    bool aXOverlapsB = (aMinX < bMinX && bMinX < aMaxX) || (aMinX < bMaxX && bMaxX < aMaxX);
     bool aYOverlapsB = (aMinY < bMinY && bMinY < aMaxY) || (aMinY < bMaxY && bMaxY < aMaxY);
-    
+
     //if (((aMinX <= bMinX && bMinX <= aMaxX) || (aMinX <= bMaxX && bMaxX <= aMaxX)) && ((aMinY <= bMinY && bMinY <= aMaxY) || (aMaxY <= bMaxY && bMaxY <= aMaxY)))
-    
-	if (aXOverlapsB && aYOverlapsB)
+
+    if (aXOverlapsB && aYOverlapsB)
     {
-		distanceX = A->position.x - B->position.x;
-		distanceY = A->position.y - B->position.y;
+        distanceX = A->position.x - B->position.x;
+        distanceY = A->position.y - B->position.y;
 
         if (distanceX > distanceY)
         {
-			A->position.x += distanceX * 0.5f;
-			B->position.x -= distanceX * 0.5f;
+            A->position.x += distanceX * 0.5f;
+            B->position.x -= distanceX * 0.5f;
         }
         else
         {
@@ -319,6 +325,9 @@ bool BoxBoxOverlap(PhysicsBox* A, PhysicsBox* B)
                 B->position.y -= overlap;
             }
         }
+
+		A->netForce = { 0,0 };
+		B->netForce = { 0,0 };
 
         return true;
     }
@@ -375,12 +384,12 @@ bool CircleHalfspaceCollisionResponse(PhysicsCircle* Circle, PhysicsHalfSpace* H
 
         // Get Gravity
         Vector2 Fgravity = world.accelerationGravity * Circle->mass;
-        
-		// Apply Normal Force
+
+        // Apply Normal Force
         Vector2 FgPerpindicular = Halfspace->GetNormal() * Vector2DotProduct(Fgravity, Halfspace->GetNormal());
         Vector2 Fnormal = FgPerpindicular * -1;
         //DrawLine(Circle->position.x, Circle->position.y, Circle->position.x + Fnormal.x, Circle->position.y + Fnormal.y, GREEN);
-        
+
         // Friction
         float coefficientOfFriction = Clamp(Circle->grippiness * Halfspace->grippiness, 0.0f, 1.0f);
         float FfrictionMagnitude = coefficientOfFriction * Vector2Length(Fnormal);
@@ -388,18 +397,18 @@ bool CircleHalfspaceCollisionResponse(PhysicsCircle* Circle, PhysicsHalfSpace* H
         Vector2 FgParallel = Fgravity - FgPerpindicular;
         Vector2 FfrictionDirection = Vector2Normalize(FgParallel * -1);
 
-		float FgParallelMagnitude = Vector2Length(FgParallel);
-		float clampedFriction = min(FfrictionMagnitude, FgParallelMagnitude);
+        float FgParallelMagnitude = Vector2Length(FgParallel);
+        float clampedFriction = min(FfrictionMagnitude, FgParallelMagnitude);
 
         Vector2 Ffriction = FfrictionDirection * clampedFriction;
-		float frictionForceLength = Vector2Length(Ffriction);
+        float frictionForceLength = Vector2Length(Ffriction);
 
         Circle->netForce += Ffriction;
 
         //Bouncing
-		float closingVelocity1D = Vector2DotProduct(Circle->velocity, Halfspace->GetNormal());
+        float closingVelocity1D = Vector2DotProduct(Circle->velocity, Halfspace->GetNormal());
 
-		if (closingVelocity1D >= 0) return true;
+        if (closingVelocity1D >= 0) return true;
 
         float restitution = Circle->bounciness * Halfspace->bounciness;
         Circle->velocity += Halfspace->GetNormal() * closingVelocity1D * -(1.0f + restitution);
@@ -419,7 +428,7 @@ void CheckCollisions()
 
     for (int i = 0; i < world.objects.size(); i++)
     {
-        for (int j = i + 1; j < world.objects.size(); j++) 
+        for (int j = i + 1; j < world.objects.size(); j++)
         {
             PhysicsObject* ObjectA = world.objects[i];
             PhysicsObject* ObjectB = world.objects[j];
@@ -447,7 +456,7 @@ void CheckCollisions()
             else if (ShapeA == AABB && ShapeB == AABB)
             {
                 isOverlapping = BoxBoxOverlap((PhysicsBox*)ObjectA, (PhysicsBox*)ObjectB);
-			}
+            }
 
             /*if (isOverlapping)
             {
@@ -485,45 +494,87 @@ void Update()
     deltatime = 1.0f / TARGET_FPS;
     time += deltatime;
 
-//#pragma region Timer
-//    
-//    minuteCounter = (int)time / 60;
-//    secondCounter = time - (minuteCounter * 60);
-//    timer = "Time: ";
-//    if (minuteCounter < 10) {
-//        timer += "0";
-//    }
-//    timer += (string)TextFormat("%d", minuteCounter) + ":";
-//    if (secondCounter < 10) {
-//        timer += "0";
-//    }
-//    timer += (string)TextFormat("%0.2f", secondCounter);
-//
-//#pragma endregion
+    //#pragma region Timer
+    //    
+    //    minuteCounter = (int)time / 60;
+    //    secondCounter = time - (minuteCounter * 60);
+    //    timer = "Time: ";
+    //    if (minuteCounter < 10) {
+    //        timer += "0";
+    //    }
+    //    timer += (string)TextFormat("%d", minuteCounter) + ":";
+    //    if (secondCounter < 10) {
+    //        timer += "0";
+    //    }
+    //    timer += (string)TextFormat("%0.2f", secondCounter);
+    //
+    //#pragma endregion
 
-    if (IsKeyPressed(KEY_SPACE))
+    //if (IsKeyPressed(KEY_SPACE))
+    //{
+    //    PhysicsCircle* newObject = new PhysicsCircle();
+    //    newObject->position = position;
+    //    newObject->velocity = { speed * (float)cos(angle * DEG2RAD), -speed * (float)sin(angle * DEG2RAD) };
+
+    //    // rand() % N produces random number from 0 to N - 1
+    //    newObject->radius = (rand() & 11) + 5; // between 5 to 15
+    //    newObject->bounciness = bounciness;
+
+    //    world.add(newObject);
+    //}
+
+    const float slingshot_radius = 10.0f;
+    const Vector2 slingshot_position = position;
+    Vector2 bird_position = slingshot_position;
+    SlingshotState slingshot_state = SLING_IDLE;
+    Vector2 mouse_position = GetMousePosition();
+
+    Vector2 startPos = {200, 600};
+	Vector2 groundPos = { 200, 700 };
+    Vector2 velocity = { speed * cos(angle * DEG2RAD), -speed * sin(angle * DEG2RAD) };
+
+    if (IsMouseButtonDown(MOUSE_LEFT_BUTTON))
     {
-        PhysicsCircle* newObject = new PhysicsCircle();
-        newObject->position = position;
-        newObject->velocity = { speed * (float)cos(angle * DEG2RAD), -speed * (float)sin(angle * DEG2RAD) };
-
-        // rand() % N produces random number from 0 to N - 1
-        newObject->radius = (rand() & 11) + 5; // between 5 to 15
-        newObject->bounciness = bounciness;
-
-        world.add(newObject);
+		slingshot_state = SLING_DRAG;
     }
 
-    if (IsKeyPressed(KEY_LEFT_SHIFT))
+    if (slingshot_state == SLING_DRAG)
     {
-        PhysicsBox* newObject = new PhysicsBox();
-        newObject->position = position;
-		newObject->size = { 30, 30 };
+		bool isMouseDown = IsMouseButtonDown(MOUSE_LEFT_BUTTON);
 
-        newObject->velocity = { speed * (float)cos(angle * DEG2RAD), -speed * (float)sin(angle * DEG2RAD) };
+        if (isMouseDown)
+        {
+            bird_position = mouse_position;
+            DrawLineEx(startPos, bird_position, 5, BLACK);
+        }
+        if (!isMouseDown || IsKeyPressed(KEY_SPACE))
+        {
+            // Launch bird (TODO -- launch bird based on direction of sling rather than hard-coded velocity)
+            PhysicsCircle* bird = new PhysicsCircle();
+            bird->position = mouse_position;
+            bird->velocity = startPos - mouse_position; //Vector2Rotate(Vector2UnitX, -45.0f * DEG2RAD) * 100.0f;
+            bird->radius = 10;
+			bird->color = YELLOW;
+            world.add(bird);
 
-        world.add(newObject);
+            slingshot_state = SLING_IDLE;
+        }
+
+        if (slingshot_state == SLING_IDLE)
+            DrawCircleV(slingshot_position, slingshot_radius, GREEN);
+        else
+            DrawCircleV(bird_position, slingshot_radius, ORANGE);
     }
+
+	DrawLineEx(startPos, groundPos, 10, ORANGE);
+    
+
+	if (IsMouseButtonDown(MOUSE_LEFT_BUTTON))
+    {
+        position = GetMousePosition();
+    }
+
+
 
     world.Update();
 }
@@ -532,34 +583,30 @@ void Draw()
 {
     BeginDrawing();
     ClearBackground(BLUE);
-    
+
     GuiSliderBar(Rectangle{ 100, 5, 200, 25 }, "Time", TextFormat("%.2f", time), &time, 0, 600);
     DrawText(timer.c_str(), 25, 130, 30, LIGHTGRAY);
 
-    GuiSliderBar(Rectangle{ 100, 35, 200, 25 }, "Angle", TextFormat("Angle: %.0f Degrees", angle), &angle, -180, 180);
-    GuiSliderBar(Rectangle{ 100, 65, 200, 25 }, "Speed", TextFormat("Speed: %0.f", speed), &speed, 10, 100);
-    GuiSliderBar(Rectangle{ 100, 95, 200, 25 }, "Gravity", TextFormat("Gravity: %0.f Pixels/Sec^2", world.accelerationGravity.y), &world.accelerationGravity.y, -100, 100);
-    GuiSliderBar(Rectangle{ 200, 125, 200, 25 }, "Bounciness", TextFormat("%.0f", bounciness), &bounciness, 0, 10);
+    //GuiSliderBar(Rectangle{ 100, 35, 200, 25 }, "Angle", TextFormat("Angle: %.0f Degrees", angle), &angle, -180, 180);
+    //GuiSliderBar(Rectangle{ 100, 65, 200, 25 }, "Speed", TextFormat("Speed: %0.f", speed), &speed, 10, 100);
+    //GuiSliderBar(Rectangle{ 100, 95, 200, 25 }, "Gravity", TextFormat("Gravity: %0.f Pixels/Sec^2", world.accelerationGravity.y), &world.accelerationGravity.y, -100, 100);
+    //GuiSliderBar(Rectangle{ 200, 125, 200, 25 }, "Bounciness", TextFormat("%.0f", bounciness), &bounciness, 0, 10);
 
 
-    Vector2 startPos = position;
-    Vector2 velocity = { speed * cos(angle * DEG2RAD), -speed * sin(angle * DEG2RAD)};
-
-    DrawLineEx({ startPos.x - speed, startPos.y }, { startPos.x + speed, startPos.y}, 7, BLACK);
-    DrawLineEx(startPos, startPos + velocity, 5, RED);
+    
 
     world.Draw();
 
     // halfspace controls
-    GuiSliderBar(Rectangle{ 200, 155, 300, 25 }, "Halfspace X", TextFormat("%.0f", halfspace.position.x), &halfspace.position.x, 0, GetScreenWidth());
-    GuiSliderBar(Rectangle{ 200, 185, 300, 25 }, "Halfspace Y", TextFormat("%.0f", halfspace.position.y), &halfspace.position.y, 0, GetScreenHeight());
-    GuiSliderBar(Rectangle{ 300, 215, 200, 25 }, "Halfspace Rotation", TextFormat("%.0f", halfspaceRotation), &halfspaceRotation, -180, 180);
-    GuiSliderBar(Rectangle{ 300, 245, 200, 25 }, "Halfspace Grippiness", TextFormat("%.0f", halfspace.grippiness), &halfspace.grippiness, 0, 10);
-    
+    //GuiSliderBar(Rectangle{ 200, 155, 300, 25 }, "Halfspace X", TextFormat("%.0f", halfspace.position.x), &halfspace.position.x, 0, GetScreenWidth());
+    //GuiSliderBar(Rectangle{ 200, 185, 300, 25 }, "Halfspace Y", TextFormat("%.0f", halfspace.position.y), &halfspace.position.y, 0, GetScreenHeight());
+    //GuiSliderBar(Rectangle{ 300, 215, 200, 25 }, "Halfspace Rotation", TextFormat("%.0f", halfspaceRotation), &halfspaceRotation, -180, 180);
+    //GuiSliderBar(Rectangle{ 300, 245, 200, 25 }, "Halfspace Grippiness", TextFormat("%.0f", halfspace.grippiness), &halfspace.grippiness, 0, 10);
+
     halfspace.SetRotationInDegrees(halfspaceRotation);
     halfspace.isStatic = true;
     halfspace2.isStatic = true;
-    
+
     Cleanup();
     EndDrawing();
 }
@@ -575,41 +622,66 @@ int main()
     GuiSetStyle(DEFAULT, TEXT_COLOR_NORMAL, 0xFFFFFFFF);
 
     halfspace.position = { 500, 700 };
-    halfspace.SetRotationInDegrees(15);    
+    halfspace.SetRotationInDegrees(15);
     world.add(&halfspace);
 
     halfspace2.position = { 400, 700 };
-    halfspace2.SetRotationInDegrees(-15);    
+    halfspace2.SetRotationInDegrees(-15);
     //world.add(&halfspace2);
 
     PhysicsBox* floorBox = new PhysicsBox;
-    floorBox->position = { 200, 750 };
-	floorBox->size = { 1200, 100};
-	floorBox->isStatic = true;
+    floorBox->position = { 600, 750 };
+    floorBox->size = { 3200, 100 };
+    floorBox->isStatic = true;
     floorBox->color = GREEN;
-	world.add(floorBox);
+    world.add(floorBox);
 
     PhysicsBox* box1 = new PhysicsBox;
-	box1->position = { 525, 650 };
-	box1->size = { 100, 100 };
+    box1->position = { 600, 690 };
+    box1->size = { 100, 60 };
     box1->color = RED;
-	world.add(box1);
+    world.add(box1);
 
-	PhysicsBox* box2 = new PhysicsBox;
-	box2->position = { 600, 550 };
-	box2->size = { 100, 100 };
-	box2->color = PURPLE;
-	world.add(box2);
-	
+    PhysicsBox* box2 = new PhysicsBox;
+    box2->position = { 601, 630 };
+    box2->size = { 100, 60 };
+    box2->color = PURPLE;
+    world.add(box2);
+
     PhysicsBox* box3 = new PhysicsBox;
-	box3->position = { 550, 450 };
-	box3->size = { 100, 100 };
-	box3->color = DARKBLUE;
-	world.add(box3);
+    box3->position = { 602, 570 };
+    box3->size = { 100, 60 };
+    box3->color = DARKBLUE;
+    world.add(box3);
+
+	PhysicsBox* box4 = new PhysicsBox;
+	box4->position = { 753, 510 };
+	box4->size = { 300, 60 };
+    box4->color = GREEN;
+	world.add(box4);
+
+    PhysicsBox* box5 = new PhysicsBox;
+    box5->position = { 900, 690 };
+    box5->size = { 100, 60 };
+    box5->color = RED;
+    world.add(box5);
+
+    PhysicsBox* box6 = new PhysicsBox;
+    box6->position = { 901, 630 };
+    box6->size = { 100, 60 };
+    box6->color = PURPLE;
+    world.add(box6);
+
+    PhysicsBox* box7 = new PhysicsBox;
+    box7->position = { 902, 570 };
+    box7->size = { 100, 60 };
+    box7->color = DARKBLUE;
+    world.add(box7);
+
 
 
     while (!WindowShouldClose())
-    {   
+    {
         Update();
         Draw();
     }
