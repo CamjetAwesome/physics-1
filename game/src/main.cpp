@@ -289,8 +289,8 @@ bool BoxBoxOverlap(PhysicsBox* A, PhysicsBox* B)
 	float distanceY = 0;
 
 	// to calculate overlap, we check if any of B's min or max points are within A's min and max points
-	bool aXOverlapsB = (aMinX <= bMinX && bMinX <= aMaxX) || (aMinX <= bMaxX && bMaxX <= aMaxX);
-    bool aYOverlapsB = (aMinY <= bMinY && bMinY <= aMaxY) || (aMinY <= bMaxY && bMaxY <= aMaxY);
+	bool aXOverlapsB = (aMinX < bMinX && bMinX < aMaxX) || (aMinX < bMaxX && bMaxX < aMaxX);
+    bool aYOverlapsB = (aMinY < bMinY && bMinY < aMaxY) || (aMinY < bMaxY && bMaxY < aMaxY);
     
     //if (((aMinX <= bMinX && bMinX <= aMaxX) || (aMinX <= bMaxX && bMaxX <= aMaxX)) && ((aMinY <= bMinY && bMinY <= aMaxY) || (aMaxY <= bMaxY && bMaxY <= aMaxY)))
     
@@ -424,10 +424,10 @@ bool CircleHalfspaceCollisionResponse(PhysicsCircle* Circle, PhysicsHalfSpace* H
 
 void CheckCollisions()
 {
-    for (int i = 0; i < world.objects.size(); i++)
+    /*for (int i = 0; i < world.objects.size(); i++)
     {
         world.objects[i]->color = GREEN;
-    }
+    }*/
 
     for (int i = 0; i < world.objects.size(); i++)
     {
@@ -461,11 +461,11 @@ void CheckCollisions()
                 isOverlapping = BoxBoxOverlap((PhysicsBox*)ObjectA, (PhysicsBox*)ObjectB);
 			}
 
-            if (isOverlapping)
+            /*if (isOverlapping)
             {
                 ObjectA->color = RED;
                 ObjectB->color = RED;
-            }
+            }*/
         }
     }
 }
@@ -587,16 +587,19 @@ int main()
     floorBox->position = { 200, 750 };
 	floorBox->size = { 1200, 100};
 	floorBox->isStatic = true;
+    floorBox->color = GREEN;
 	world.add(floorBox);
 
     PhysicsBox* box1 = new PhysicsBox;
-	box1->position = { 600, 650 };
+	box1->position = { 575, 650 };
 	box1->size = { 50, 50 };
+    box1->color = RED;
 	world.add(box1);
 
 	PhysicsBox* box2 = new PhysicsBox;
 	box2->position = { 600, 500 };
 	box2->size = { 50, 50 };
+	box2->color = PURPLE;
 	world.add(box2);
 
 
